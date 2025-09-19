@@ -25,7 +25,7 @@ output	logic	[DATA_WIDTH-1:0]		rx_data
 	state_t state;
 
 	logic	[$clog2(DIVIDER)-1:0]		sclk_counter;
-	logic	[$clog2(DATA_WIDTH)-1:0]	bit_counter;
+	logic	[$clog2(DATA_WIDTH):0]	bit_counter;
 	logic	[DATA_WIDTH-1:0]			rx_shifter;
 	logic	[DATA_WIDTH-1:0]			tx_shifter;
 
@@ -33,6 +33,7 @@ output	logic	[DATA_WIDTH-1:0]		rx_data
 	
 		if(!rst_n) begin
 			sclk_counter <= 0;
+			bit_counter <= 0;
 			state <= IDLE;
 			ready <= 1'b1;
 			SS_n <= {NUM_CS{1'b1}};
@@ -46,6 +47,7 @@ output	logic	[DATA_WIDTH-1:0]		rx_data
 			case(state)
 				IDLE: begin
 					sclk_counter <= 0;
+					bit_counter <= 0;
 					if(start) begin
 						state <= DATA;
 						ready <= 1'b0;
@@ -60,19 +62,11 @@ output	logic	[DATA_WIDTH-1:0]		rx_data
 					if(sclk_counter == DIVIDER-1) begin
 						sclk <= ~sclk;
 						sclk_counter <= 0;
-						if(bit_counter == DATA_WIDTH-1) begin
-							state <= IDLE;
-							rx_data <= rx_shifter;
-							SS_n <= {NUM_CS{1'b1}};
-							ready <= 1'b1;
-						end
-						else 
-							state <= DATA;
 					end
 					else begin
 						sclk_counter <= sclk_counter + 1;
-						state <= DATA;
 					end
+					state <= DATA;
 				end //DATA
 				
 				default: begin
@@ -85,21 +79,33 @@ output	logic	[DATA_WIDTH-1:0]		rx_data
 	
 	always @(posedge sclk) begin    
 		if(SPI_MODE[0] == 1'b0) begin //sample for MODE 0 and 2
-			rx_shifter <= {rx_shifter[DATA_WIDTH-2:1], miso};
+			rx_shifter <= {rx_shifter[DATA_WIDTH-2:0], miso};
 			bit_counter <= bit_counter + 1'b1;
 		end
 		else begin //shift for MODE 1 and 3
-			tx_shifter <= {tx_shifter[DATA_WIDTH-2:1], 1'b0};
+			tx_shifter <= {tx_shifter[DATA_WIDTH-2:0], 1'b0};
+			if(bit_counter == DATA_WIDTH) begin
+				state <= IDLE;
+				rx_data <= rx_shifter;
+				SS_n <= {NUM_CS{1'b1}};
+				ready <= 1'b1;
+			end
 		end
 	end
 	
 	always @(negedge sclk) begin   
 		if(SPI_MODE[0] == 1'b1) begin //sample for MODE 1 and 3
-			rx_shifter <= {rx_shifter[DATA_WIDTH-2:1], miso};
+			rx_shifter <= {rx_shifter[DATA_WIDTH-2:0], miso};
 			bit_counter <= bit_counter + 1'b1;
 		end
 		else begin  //shift for MODE 0 and 2
-			tx_shifter <= {tx_shifter[DATA_WIDTH-2:1], 1'b0};
+			tx_shifter <= {tx_shifter[DATA_WIDTH-2:0], 1'b0};
+			if(bit_counter == DATA_WIDTH) begin
+				state <= IDLE;
+				rx_data <= rx_shifter;
+				SS_n <= {NUM_CS{1'b1}};
+				ready <= 1'b1;
+			end
 		end
 	end
 	

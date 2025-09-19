@@ -30,7 +30,7 @@ localparam integer DIVIDER = SYS_CLK_FREQ / (2 * SPI_CLK_FREQ);
 property check_reset;
 	@(posedge clk) 
 		(!rst_n |-> (`sclk_counter == 0 && `state == SPI_master_tb.my_spi.IDLE && ready && SS_n == {NUM_CS{1'b1}}
-					&& rx_data == 0 && `rx_shifter == 0 && `tx_shifter == 0 && (sclk == SPI_MODE[1])));
+					&& rx_data == 0 && `rx_shifter == 0 && `tx_shifter == 0 && `bit_counter == 0 && (sclk == SPI_MODE[1])));
 endproperty
 check_resetP: assert property (check_reset) else $display($stime,"\t\t FAIL::check_reset\n");
 check_resetC: cover property (check_reset) $display($stime,"\t\t PASS::check_reset\n");
@@ -67,7 +67,7 @@ check_sclk_countC: cover property (check_sclk_count) $display($stime, "\t\t Pass
 
 property check_ss_n;
 	@(posedge clk) disable iff(!rst_n)
-		($fell(ready) |-> $stable(SS_n) until $rose(ready));
+		($fell(ready) |-> ##1 $stable(SS_n) until $rose(ready));
 endproperty
 check_ss_nP: assert property (check_ss_n) else $display($stime,"\t\t Fail::check_ss_n\n");
 check_ss_nC: cover property (check_ss_n) $display($stime,"\t\t Pass::check_ss_n\n");
@@ -83,7 +83,7 @@ check_spi_freqC: cover property (check_spi_freq) $display($stime,"\t\t Pass::che
 
 
 
-
+/*
 check_spi_mode0_C: cover property (@(posedge clk) disable iff(!rst_n) (SPI_MODE == 0)) 
 	$display($stime,"\t\t Pass::check_spi_mode0\n");
 
@@ -95,6 +95,7 @@ check_spi_mode2_C: cover property (@(posedge clk) disable iff(!rst_n) (SPI_MODE 
 	
 check_spi_mode3_C: cover property (@(posedge clk) disable iff(!rst_n) (SPI_MODE == 3)) 
 	$display($stime,"\t\t Pass::check_spi_mode3\n");
+*/
 
 check_back_to_back_transfer: cover property (@(posedge clk) disable iff(!rst_n) 
 	($rose(ready) |-> ##1 $fell(ready))) $display($stime,"\t\t Pass::check_back_to_back_transfer\n");
