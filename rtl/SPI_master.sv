@@ -63,6 +63,7 @@ output	logic	[DATA_WIDTH-1:0]		rx_data
 						if(bit_counter == DATA_WIDTH-1) begin
 							state <= IDLE;
 							rx_data <= rx_shifter;
+							SS_n <= {NUM_CS{1'b1}};
 							ready <= 1'b1;
 						end
 						else 
