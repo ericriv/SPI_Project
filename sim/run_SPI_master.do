@@ -4,7 +4,7 @@
 # ================================
 
 # Clean and recreate work directory
-#vdel -all
+vdel -all
 vlib work
 
 # Compile RTL, assertions, and testbench
